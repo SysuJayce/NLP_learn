@@ -325,14 +325,16 @@ class JB:
 
 
 def main():
+    dic_dir = r'D:\codes\python\learning-nlp\chapter-3\data\\'
     # text = "南京市长江大桥"
     # text = "这是一个非常棒的方案！"
     # text = "中国卫生部官员24日说，截至2005年底！"
-    dic_dir = r'D:\codes\python\learning-nlp\chapter-3\data\\'
+
     # tokenizer = IMM(dic_path)
     # tokenizer = MM(dic_path)
     # tokenizer = BiMM(dic_path)
     # tokenizer = HMM()
+
     # dic_path = dic_dir + r'trainCorpus.txt_utf8'
     # tokenizer.train(dic_path)
     # result = tokenizer.cut(text, dic_path)
@@ -349,32 +351,16 @@ def main():
     # seg_list = jieba.cut_for_search(text)
     # print("cut for search: ", '/'.join(seg_list))
 
-    # files = glob.glob(dic_dir + r'news\C000013\*.txt')
-    # stop_words_path = dic_dir + r'stop_words.utf8'
-    # corpus = [JB.get_content(x) for x in files]
-    #
-    # sample_inx = random.randint(0, len(corpus))
-    # split_words = [x for x in jieba.cut(corpus[sample_inx])
-    #                if x not in JB.stop_words(stop_words_path)]
-    # print("Sample 1: ", corpus[sample_inx])
-    # print("\nAfter Cutting: ", '/'.join(split_words))
-    # print("\nTopK(10) words: ", str(JB.get_TF(split_words)))
+    files = glob.glob(dic_dir + r'news\C000013\*.txt')
+    stop_words_path = dic_dir + r'stop_words.utf8'
+    corpus = [JB.get_content(x) for x in files]
 
-    content = '''
-    自然语言处理（NLP）是计算机科学，人工智能，语言学关注计算机和人类（自然）语言之间的相互作用的领域。
-    因此，自然语言处理是与人机交互的领域有关的。在自然语言处理面临很多挑战，包括自然语言理解，因此，自然语言处理涉及人机交互的面积。
-    在NLP诸多挑战涉及自然语言理解，即计算机源于人为或自然语言输入的意思，和其他涉及到自然语言生成。
-    '''
-    aly.set_idf_path(dic_dir + 'idf.txt.big')
-    aly.set_stop_words(dic_dir + 'stop_words.utf8')
-
-    # keywords = aly.extract_tags(content, topK=10, withWeight=True, allowPOS=())
-
-    keywords = jieba.analyse.textrank(content, topK=10, withWeight=True,
-                                      allowPOS=('ns', 'n', 'vn', 'v'))
-    
-    for item in keywords:
-        print(item[0], item[1])
+    sample_inx = random.randint(0, len(corpus))
+    split_words = [x for x in jieba.cut(corpus[sample_inx])
+                   if x not in JB.stop_words(stop_words_path)]
+    print("Sample 1: ", corpus[sample_inx])
+    print("\nAfter Cutting: ", '/'.join(split_words))
+    print("\nTopK(10) words: ", str(JB.get_TF(split_words)))
 
 
 main()
