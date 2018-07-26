@@ -11,7 +11,7 @@ import numpy as np
 from gensim.models import Word2Vec
 from chapter7.lib.keyword_extract import get_keyword
 
-wordvec_size = 192
+wordvec_size = 192  # 每个词向量的大小
 
 
 # noinspection PyBroadException
@@ -31,12 +31,23 @@ def get_char_pos(string, char):
 
 
 def word2vec(file_name, model_):
+    """
+    计算file_name中的词的词向量。
+    如果在model_中能找到就设置为model_中相应的词向量，否则设置为默认的全0向量
+    :param file_name:
+    :param model_:
+    :return:
+    """
     with codecs.open(file_name, 'r', encoding='utf8') as f:
         word_vec_all = np.zeros(wordvec_size)
         for data in f:
+            # 通过提前设置一个假的空格索引 -1 来处理第一个词的索引
             space_pos = [-1]
             space_pos.extend(get_char_pos(data, ' '))
 
+            # 书上的代码有错。
+            # 已改成从space_pos[i]+1开始切片，否则会包含空格，
+            # 使得在model中查找不到这个词，导致相似度偏低
             for i in range(len(space_pos)-1):
                 word = data[space_pos[i]+1: space_pos[i+1]]
 
@@ -48,6 +59,12 @@ def word2vec(file_name, model_):
 
 
 def similarity(v1, v2):
+    """
+    计算v1和v2的余弦相似性
+    :param v1:
+    :param v2:
+    :return:
+    """
     v1_mod = np.sqrt(v1.dot(v1))
     v2_mod = np.sqrt(v2.dot(v2))
     if v1_mod * v2_mod != 0:
@@ -63,11 +80,11 @@ if __name__ == '__main__':
     p2 = './data/P2.txt'
     p1_keywords = './data/P1_keywords.txt'
     p2_keywords = './data/P2_keywords.txt'
-    get_keyword(p1, p1_keywords)
+    get_keyword(p1, p1_keywords)  # 提取p1和p2的关键词，保存在keywords路径中
     get_keyword(p2, p2_keywords)
 
-    p1_vec = word2vec(p1_keywords, model)
+    p1_vec = word2vec(p1_keywords, model)  # 获取p1和p2的词向量
     p2_vec = word2vec(p2_keywords, model)
 
-    sim = similarity(p1_vec, p2_vec)
+    sim = similarity(p1_vec, p2_vec)  # 利用生成的词向量计算p1和p2的相似度
     print(sim)
