@@ -2,13 +2,14 @@
 # @Time         : 2018-07-26 17:46
 # @Author       : Jayce Wong
 # @ProjectName  : NLP
-# @FileName     : word2vec_sim.py
+# @FileName     : similarity.py
 # @Blog         : http://blog.51cto.com/jayce1111
 # @Github       : https://github.com/SysuJayce
 
 import codecs
+import jieba
 import numpy as np
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, Doc2Vec
 from chapter7.lib.keyword_extract import get_keyword
 
 wordvec_size = 192  # 每个词向量的大小
@@ -58,7 +59,7 @@ def word2vec(file_name, model_):
         return word_vec_all
 
 
-def similarity(v1, v2):
+def cal_similarity(v1, v2):
     """
     计算v1和v2的余弦相似性
     :param v1:
@@ -74,8 +75,22 @@ def similarity(v1, v2):
     return sim_
 
 
+def doc2vec(file_name, model_):
+    """
+    读入file_name中的句子然后利用jieba分词，最后利用训练好的model推断分词列表的
+    向量表示
+    :param file_name: 待处理文档
+    :param model_: 训练好的doc2vec模型
+    :return:
+    """
+    doc = [w for x in codecs.open(file_name, 'r', encoding='utf8').readlines()
+           for w in jieba.cut(x.strip())]
+    doc_vec_all = model_.infer_vector(doc, alpha=0.01, steps=1000)
+    return doc_vec_all
+
+
 if __name__ == '__main__':
-    model = Word2Vec.load('./data/zhwiki_news.word2vec')
+    model1 = Word2Vec.load('./data/zhwiki_news.word2vec')
     p1 = './data/P1.txt'
     p2 = './data/P2.txt'
     p1_keywords = './data/P1_keywords.txt'
@@ -83,8 +98,14 @@ if __name__ == '__main__':
     get_keyword(p1, p1_keywords)  # 提取p1和p2的关键词，保存在keywords路径中
     get_keyword(p2, p2_keywords)
 
-    p1_vec = word2vec(p1_keywords, model)  # 获取p1和p2的词向量
-    p2_vec = word2vec(p2_keywords, model)
+    p1_vec = word2vec(p1_keywords, model1)  # 获取p1和p2的词向量
+    p2_vec = word2vec(p2_keywords, model1)
 
-    sim = similarity(p1_vec, p2_vec)  # 利用生成的词向量计算p1和p2的相似度
-    print(sim)
+    sim = cal_similarity(p1_vec, p2_vec)  # 利用生成的词向量计算p1和p2的相似度
+    print("word2vec similarity: %f" % sim)
+
+    model2 = Doc2Vec.load('./data/zhwiki_news.doc2vec')
+    p1_doc_vec = doc2vec(p1, model2)
+    p2_doc_vec = doc2vec(p2, model2)
+    sim = cal_similarity(p1_doc_vec, p2_doc_vec)
+    print("doc2vec similarity: %f" % sim)
