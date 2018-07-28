@@ -7,16 +7,15 @@
 # @Github       : https://github.com/SysuJayce
 
 import os
-import datetime
 import numpy as np
 import tensorflow as tf
 from random import randint
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', '.*do not.*',)
 
 # tensorflow中gpu参数的一些设置
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 设置为3，用来屏蔽掉numpy的warning
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 config.gpu_options.per_process_gpu_memory_fraction = 0.8
@@ -28,7 +27,7 @@ num_dimensions = 300
 batch_size = 24
 lstm_units = 64
 num_labels = 2
-iterations = 100001
+iterations = 100000
 ids = np.load('./data/idsMatrix.npy')
 word_vectors = np.load('./data/wordVectors.npy')
 
@@ -69,8 +68,6 @@ def get_test_batch():
 # 定义输入特征和label
 labels = tf.placeholder(tf.float32, [batch_size, num_labels])
 input_data = tf.placeholder(tf.int32, [batch_size, max_seq_num])
-# data = tf.Variable(tf.zeros([batch_size, max_seq_num, num_dimensions]),
-#                    dtype=tf.float32)
 # 将输入的特征转换成词向量表示
 data = tf.nn.embedding_lookup(word_vectors, input_data)
 
@@ -85,18 +82,22 @@ bias = tf.Variable(tf.constant(0.1, shape=[num_labels]))
 value = tf.transpose(value, [1, 0, 2])  # 转置，交换第0维和第1维，即行和列
 # 提取value最后一行，即LSTM最后的隐藏状态
 last = tf.gather(value, int(value.get_shape()[0]) - 1)
-prediction = tf.matmul(last, weight) + bias  # 计算预测值
 
+# 定义输出，计算预测值
+prediction = tf.matmul(last, weight) + bias
 correct_pred = tf.equal(tf.argmax(prediction, 1), tf.argmax(labels, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
-loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=prediction,
-                                                              labels=labels))
+# 定义损失函数，使用softmax交叉熵作为损失函数
+loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
+    logits=prediction, labels=labels))
+
+# 定义优化器
 optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 saver = tf.train.Saver()
 with tf.Session(config=config) as sess:
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
     # checkpoint_path = (r'D:\codes\python\learning-nlp\chapter-8'
     #                    r'\sentiment-analysis\models\\checkpoint')
     # model_file = tf.train.latest_checkpoint(checkpoint_path)
@@ -105,11 +106,10 @@ with tf.Session(config=config) as sess:
 
     for k in range(iterations):
         next_batch, next_batch_label = get_train_batch()
-        sess.run(optimizer, {input_data: next_batch, labels: next_batch_label})
-        if k % 10000 == 0 and k != 0:
+        acc, _ = sess.run([accuracy, optimizer],
+                          {input_data: next_batch, labels: next_batch_label})
+        print("iteration %d, accuracy: %f" % (k, acc))
+        if (k % 10000 == 0 and k != 0) or (k == iterations - 1):
             save_path = saver.save(sess, './model/sentiment.ckpt',
                                    global_step=k)
             print("saved to %s" % save_path)
-
-    # print("accuracy:", sess.run(accuracy, {input_data: next_batch,
-    #                                        labels: next_batch_label}) * 100)
